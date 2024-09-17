@@ -14,6 +14,5 @@ CODE_OF_CONDUCT.md
 deploy/
 docs/
 certificates/
-server/
 .github/
 ./pathservice/taxonomy/
