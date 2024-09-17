@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 8000
 
 # Run the chat server with the specified model family and model file
-CMD ["ilab", "serve", "--model-family", "merlinite", "--model-path", "models/merlinite-7b-lab-Q4_K_M.gguf"]
+CMD ["ilab", "serve", "--model-family", "merlinite", "--model-path", "/mnt/models/merlinite-7b-lab-Q4_K_M.gguf"]
