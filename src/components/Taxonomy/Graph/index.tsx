@@ -24,8 +24,9 @@ const buildGraphElements = (data: NodeData[]): any[] => {
   let nodesSet = new Set<string>();
 
   elements.push({
-    data: { id: 'taxonomy', label: 'taxonomy' },
+    data: { id: 'taxonomy', label: 'taxonomy', type: 'folder', children: data },
   });
+
   nodesSet.add('taxonomy');
   data.forEach((item) => {
     elements = elements.concat(buildGraphElementsRecursive(item, 'taxonomy', nodesSet));
@@ -44,7 +45,7 @@ const buildGraphElementsRecursive = (node: NodeData, parentId: string, nodesSet:
   nodesSet.add(nodeId);
 
   elements.push({
-    data: { id: nodeId, label: node.name },
+    data: { id: nodeId, label: node.name, type: node.type, children: node.children },
   });
 
   elements.push({
@@ -62,10 +63,27 @@ const buildGraphElementsRecursive = (node: NodeData, parentId: string, nodesSet:
   return elements;
 };
 
+const Modal: React.FC<{ isVisible: boolean; content: string; onClose: () => void }> = ({ isVisible, content, onClose }) => {
+  if (!isVisible) return null;
+
+  return (
+    <div className={styles.modalBackdrop}>
+      <div className={styles.modal}>
+        <div className={styles.modalContent}>
+          <span>{content}</span>
+          <button onClick={onClose} className={styles.closeButton}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TaxonomyGraph: React.FC = () => {
   const [elements, setElements] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNodeContent, setSelectedNodeContent] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -84,18 +102,45 @@ const TaxonomyGraph: React.FC = () => {
     loadData();
   }, []);
 
+  const handleNodeClick = (event: any) => {
+    const node = event.target;
+    const nodeType = node.data('type');
+    const nodeName = node.data('label');
+    const children = node.data('children');
+    
+    if (nodeType !== 'folder') {
+      setSelectedNodeContent(nodeName);
+      setIsModalVisible(true);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setSelectedNodeContent(null);
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
     <div className={styles.cytoscapeContainer}>
       {elements.length > 0 && (
-        <CytoscapeComponent
-          elements={elements}
-          style={{ width: '100%', height: '900px' }}
-          layout={{ name: 'breadthfirst', directed: true, spacingFactor: 1.2, animate: true }}
-          stylesheet={getStylesheet()}
-        />
+        <>
+          <CytoscapeComponent
+            elements={elements}
+            style={{ width: '100%', height: '900px' }}
+            layout={{ name: 'breadthfirst', directed: true, spacingFactor: 1.2, animate: true }}
+            stylesheet={getStylesheet()}
+            cy={(cy) => {
+              cy.on('tap', 'node', handleNodeClick);
+            }}
+          />
+          <Modal
+            isVisible={isModalVisible}
+            content={selectedNodeContent || ''}
+            onClose={closeModal}
+          />
+        </>
       )}
     </div>
   );

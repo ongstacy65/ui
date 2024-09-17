@@ -43,7 +43,6 @@ async function fetchGithubRepoData(path = ''): Promise<any> {
     }
   }
 
-  console.log(filteredData);
   return filteredData;
 }
 
@@ -87,7 +86,7 @@ export async function GET() {
     const folderStructure = buildTree(data);
     return NextResponse.json(folderStructure);
   } catch (error) {
-    console.error('Error in GET /api/taxonomy/graph:', error); // Enhanced error logging
+    console.error('Error in GET /api/taxonomy/graph:', error);
 
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
