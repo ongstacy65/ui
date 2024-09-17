@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import yaml from 'js-yaml';
+import fetch from 'node-fetch';
+import { load } from 'js-yaml'
+import { stringify } from 'yaml';
 
 const INCLUDED_FOLDERS = ['compositional_skills', 'foundational_skills', 'knowledge'];
 const EXCLUDED_FILES = ['.gitignore', '.md'];
@@ -40,6 +42,8 @@ async function fetchGithubRepoData(path = ''): Promise<any> {
   for (const item of filteredData) {
     if (item.type === 'dir') {
       item.children = await fetchGithubRepoData(item.path);
+    } else if (item.type === 'file') {
+      item.content = await fetchFileContent(item.download_url);
     }
   }
 
@@ -58,9 +62,10 @@ async function fetchFileContent(url: string): Promise<any> {
   }
 
   const text = await response.text();
-  
+ 
   try {
-    return yaml.load(text);
+    const parsedYaml = load(text);
+    return stringify(parsedYaml);
   } catch (e) {
     console.error('Failed to parse YAML', e);
     return text;
@@ -76,6 +81,7 @@ function buildTree(data: any, parentPath = ''): any {
       path: `${parentPath}/${item.name}`,
       type: isFolder ? 'folder' : 'file',
       ...(isFolder && { children: buildTree(item.children, `${parentPath}/${item.name}`) }),
+      content: isFolder ? 'No content' : item.content,
     };
   });
 }
@@ -91,3 +97,5 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export { fetchFileContent };
