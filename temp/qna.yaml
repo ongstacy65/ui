@@ -1,0 +1,10 @@
+created_by: artreimus
+version: 3
+task_description: hello world2asdas
+seed_examples:
+  - question: what is the world
+    answer: dasddaasd
+    context: a2sadsadasds
+  - question: 1+1?
+    answer: a6
+    context: a5asdsadsadsdasda

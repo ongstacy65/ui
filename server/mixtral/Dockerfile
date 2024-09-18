@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir instructlab==0.16.1
 # Copy project files to the working directory
 COPY config.yaml .
 
-RUN ilab download --repository=TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF --filename=mixtral-8x7b-instruct-v0.1.Q2_K_M.gguf
+RUN ilab download --repository=TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF --filename=mixtral-8x7b-instruct-v0.1.Q2_K.gguf
 
 # Copy project files to the working directory
 COPY . .
@@ -20,7 +20,7 @@ COPY . .
 EXPOSE 8000
 
 # Run the chat server with the specified model family and model file
-CMD ["ilab", "serve", "--model-path", "mixtral-8x7b-instruct-v0.1.Q2_K_M.gguf"]
+CMD ["ilab", "serve", "--model-path", "mixtral-8x7b-instruct-v0.1.Q2_K.gguf"]
 
 
 
