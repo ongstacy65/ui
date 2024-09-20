@@ -43,14 +43,15 @@ async function fetchGithubRepoData(path = ''): Promise<any> {
     if (item.type === 'dir') {
       item.children = await fetchGithubRepoData(item.path);
     } else if (item.type === 'file') {
-      item.content = await fetchFileContent(item.download_url);
+      const content = await fetchFileContent(item.download_url);
+      item.content = stringify(content);
+      item.created_by = content?.created_by || 'Unknown';
     }
   }
 
   return filteredData;
 }
 
-// TODO: render file data in frontend through pop up window
 async function fetchFileContent(url: string): Promise<any> {
   const response = await fetch(url, {
     headers: {
@@ -65,7 +66,7 @@ async function fetchFileContent(url: string): Promise<any> {
  
   try {
     const parsedYaml = load(text);
-    return stringify(parsedYaml);
+    return parsedYaml;
   } catch (e) {
     console.error('Failed to parse YAML', e);
     return text;
@@ -82,6 +83,7 @@ function buildTree(data: any, parentPath = ''): any {
       type: isFolder ? 'folder' : 'file',
       ...(isFolder && { children: buildTree(item.children, `${parentPath}/${item.name}`) }),
       content: isFolder ? 'No content' : item.content,
+      created_by: item.created_by,
     };
   });
 }

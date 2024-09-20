@@ -9,6 +9,8 @@ interface NodeData {
   name: string;
   type: string;
   children?: NodeData[];
+  content: string;
+  created_by: string;
 }
 
 const fetchTaxonomyData = async (): Promise<NodeData[]> => {
@@ -45,7 +47,7 @@ const buildGraphElementsRecursive = (node: NodeData, parentId: string, nodesSet:
   nodesSet.add(nodeId);
 
   elements.push({
-    data: { id: nodeId, label: node.name, type: node.type, children: node.children },
+    data: { id: nodeId, label: node.name, type: node.type, children: node.children, content: node.content, created_by: node.created_by },
   });
 
   elements.push({
@@ -63,14 +65,19 @@ const buildGraphElementsRecursive = (node: NodeData, parentId: string, nodesSet:
   return elements;
 };
 
-const Modal: React.FC<{ isVisible: boolean; content: string; onClose: () => void }> = ({ isVisible, content, onClose }) => {
+const Modal: React.FC<{ isVisible: boolean; content: string; createdBy: string; onClose: () => void }> = ({ isVisible, content, createdBy, onClose }) => {
   if (!isVisible) return null;
+
+  const badgeStyle = createdBy === 'IBM' ? styles.ibmBadge : styles.otherBadge;
 
   return (
     <div className={styles.modalBackdrop}>
       <div className={styles.modal}>
         <div className={styles.modalContent}>
-          <span>{content}</span>
+        <span className={`${styles.badge} ${badgeStyle}`}>
+            {createdBy}
+          </span>
+          <pre className={styles.formattedContent}>{content}</pre>
           <button onClick={onClose} className={styles.closeButton}>Close</button>
         </div>
       </div>
@@ -78,12 +85,14 @@ const Modal: React.FC<{ isVisible: boolean; content: string; onClose: () => void
   );
 };
 
+
 const TaxonomyGraph: React.FC = () => {
   const [elements, setElements] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeContent, setSelectedNodeContent] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [modalCreatedBy, setModalCreatedBy] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -102,21 +111,23 @@ const TaxonomyGraph: React.FC = () => {
     loadData();
   }, []);
 
-  const handleNodeClick = (event: any) => {
+  const  handleNodeClick = async (event: any) => {
     const node = event.target;
     const nodeType = node.data('type');
-    const nodeName = node.data('label');
-    const children = node.data('children');
+    const nodeContent = node.data('content');
+    const createdBy = node.data('created_by');    
     
     if (nodeType !== 'folder') {
-      setSelectedNodeContent(nodeName);
+      setSelectedNodeContent(nodeContent);
       setIsModalVisible(true);
+      setModalCreatedBy(createdBy);
     }
   };
 
   const closeModal = () => {
     setIsModalVisible(false);
     setSelectedNodeContent(null);
+    setModalCreatedBy(null);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -128,7 +139,7 @@ const TaxonomyGraph: React.FC = () => {
         <>
           <CytoscapeComponent
             elements={elements}
-            style={{ width: '100%', height: '900px' }}
+            style={{ width: '100%', height: '800px' }}
             layout={{ name: 'breadthfirst', directed: true, spacingFactor: 1.2, animate: true }}
             stylesheet={getStylesheet()}
             cy={(cy) => {
@@ -138,6 +149,7 @@ const TaxonomyGraph: React.FC = () => {
           <Modal
             isVisible={isModalVisible}
             content={selectedNodeContent || ''}
+            createdBy={modalCreatedBy || ''}
             onClose={closeModal}
           />
         </>
