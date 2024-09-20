@@ -34,7 +34,7 @@ const buildGraphElements = (data: NodeData[], nodePositions: Record<string, { x:
 
   // Add the root node with its position
   elements.push({
-    data: { id: 'taxonomy', label: 'taxonomy', type: 'folder', children: data, content: '', created_by: '' },
+    data: { id: 'taxonomy', label: 'taxonomy', type: 'dir', children: data, content: '', created_by: '' },
     position: nodePositions['taxonomy'] || { x: 0, y: 0 } // Default position if not set
   });
 
@@ -74,7 +74,7 @@ const buildGraphElementsRecursive = (
   });
 
   // If the node is a folder and has children, recurse
-  if (node.type === 'folder' && node.children && node.children.length > 0) {
+  if (node.type === 'dir' && node.children && node.children.length > 0) {
     node.children.forEach((child: NodeData) => {
       // Explicitly type 'child' as NodeData
       elements = elements.concat(buildGraphElementsRecursive(child, nodeId, nodesSet, nodePositions));
@@ -153,7 +153,7 @@ const TaxonomyGraph: React.FC = () => {
     const createdBy = node.data('created_by');
     const children = node.data('children');
 
-    if (nodeType === 'folder' && children) {
+    if (nodeType === 'dir' && children) {
       toggleNodeVisibility(nodeId);
     } else {
       // If the clicked node is not a folder, show the content in the modal
@@ -305,7 +305,7 @@ const getStylesheet = (collapsedNodes: Set<string>): cytoscape.Stylesheet[] => [
         const nodeId = ele.data('id');
         const nodeType = ele.data('type');
         const hasChildren = ele.data('children') && ele.data('children').length > 0;
-        if (nodeType === 'folder' && hasChildren) {
+        if (nodeType === 'dir' && hasChildren) {
           const isCollapsed = collapsedNodes.has(nodeId);
           return isCollapsed ? `${ele.data('label')} (▶)` : `${ele.data('label')} (▼)`;
         } else {

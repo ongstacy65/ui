@@ -101,7 +101,7 @@ function buildTree(data: GithubFile[], parentPath = ''): GithubFile[] {
     return {
       name: item.name,
       path: `${parentPath}/${item.name}`,
-      type: isFolder ? 'folder' : 'file',
+      type: item.type,
       ...(isFolder && { children: buildTree(item.children || [], `${parentPath}/${item.name}`) }),
       content: isFolder ? 'No content' : item.content,
       created_by: item.created_by
