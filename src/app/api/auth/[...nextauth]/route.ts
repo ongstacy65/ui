@@ -37,7 +37,7 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console(), new winston.transports.File({ filename: path.join(process.cwd(), 'auth.log') })]
 });
 
-const ORG = process.env.NEXT_PUBLIC_TAXONOMY_REPO_OWNER!;
+const ORG = process.env.NEXT_PUBLIC_TAXONOMY_REPO_ORG!;
 
 const authOptions: NextAuthOptions = {
   providers: [
