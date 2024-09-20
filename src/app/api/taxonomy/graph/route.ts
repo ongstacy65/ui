@@ -51,7 +51,7 @@ async function fetchGithubRepoData(path = ''): Promise<GithubFile[]> {
     throw new Error(`GitHub API Error: ${response.statusText}`);
   }
 
-  const data: GithubApiResponse[] = await response.json();
+  const data: GithubApiResponse[] = await response.json() as GithubApiResponse[];
 
   const filteredData: GithubFile[] = data
     .filter((item: GithubApiResponse) => pathIncludesIncludedFolder(item.path) && !isExcludedFile(item.path))
@@ -66,7 +66,7 @@ async function fetchGithubRepoData(path = ''): Promise<GithubFile[]> {
     } else if (item.type === 'file' && item.download_url) {
       const content = await fetchFileContent(item.download_url);
       item.content = typeof content === 'string' ? content : stringify(content);
-      item.created_by = (typeof content !== 'string' && content?.created_by) || 'Unknown';
+      item.created_by = (typeof content !== 'string' && content?.created_by as string) || 'Unknown';
     }
   }
 
@@ -123,4 +123,3 @@ export async function GET() {
   }
 }
 
-export { fetchFileContent };

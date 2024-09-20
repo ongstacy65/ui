@@ -184,6 +184,10 @@ const TaxonomyGraph: React.FC = () => {
     if (cyRef.current) {
       cyRef.current.batch(() => {
         // First, show all nodes and edges
+        if (!cyRef.current) {
+          return;
+        }
+
         cyRef.current.elements().forEach((ele) => {
           ele.style('display', 'element');
         });
@@ -259,6 +263,9 @@ const TaxonomyGraph: React.FC = () => {
   useEffect(() => {
     if (cyRef.current && Object.keys(nodePositions).length > 0) {
       cyRef.current.batch(() => {
+        if (!cyRef.current) {
+          return;
+        }
         cyRef.current.nodes().forEach((node) => {
           const pos = nodePositions[node.id()];
           if (pos) {
