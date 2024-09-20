@@ -1,21 +1,37 @@
 import { NextResponse } from 'next/server';
 import fetch from 'node-fetch';
-import { load } from 'js-yaml'
+import { load } from 'js-yaml';
 import { stringify } from 'yaml';
+
+interface GithubFile {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+  download_url?: string;
+  content?: string;
+  created_by?: string;
+  children?: GithubFile[];
+}
+
+interface GithubApiResponse {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+  download_url?: string;
+}
 
 const INCLUDED_FOLDERS = ['compositional_skills', 'foundational_skills', 'knowledge'];
 const EXCLUDED_FILES = ['.gitignore', '.md'];
 
-
 const pathIncludesIncludedFolder = (path: string): boolean => {
-  return INCLUDED_FOLDERS.some(folder => path.includes(folder));
+  return INCLUDED_FOLDERS.some((folder) => path.includes(folder));
 };
 
 const isExcludedFile = (path: string): boolean => {
-  return EXCLUDED_FILES.some(file => path.includes(file));
+  return EXCLUDED_FILES.some((file) => path.includes(file));
 };
 
-async function fetchGithubRepoData(path = ''): Promise<any> {
+async function fetchGithubRepoData(path = ''): Promise<GithubFile[]> {
   const REPO_OWNER = process.env.NEXT_PUBLIC_TAXONOMY_REPO_OWNER;
   const REPO_NAME = process.env.NEXT_PUBLIC_TAXONOMY_REPO;
 
@@ -27,45 +43,51 @@ async function fetchGithubRepoData(path = ''): Promise<any> {
 
   const response = await fetch(GITHUB_REPO_API_URL, {
     headers: {
-      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-    },
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+    }
   });
 
   if (!response.ok) {
     throw new Error(`GitHub API Error: ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data: GithubApiResponse[] = await response.json();
 
-  const filteredData = data.filter((item: any) => pathIncludesIncludedFolder(item.path) && !isExcludedFile(item.path));
+  const filteredData: GithubFile[] = data
+    .filter((item: GithubApiResponse) => pathIncludesIncludedFolder(item.path) && !isExcludedFile(item.path))
+    .map((item) => ({
+      ...item,
+      children: item.type === 'dir' ? [] : undefined
+    }));
 
   for (const item of filteredData) {
     if (item.type === 'dir') {
       item.children = await fetchGithubRepoData(item.path);
-    } else if (item.type === 'file') {
+    } else if (item.type === 'file' && item.download_url) {
       const content = await fetchFileContent(item.download_url);
-      item.content = stringify(content);
-      item.created_by = content?.created_by || 'Unknown';
+      item.content = typeof content === 'string' ? content : stringify(content);
+      item.created_by = (typeof content !== 'string' && content?.created_by) || 'Unknown';
     }
   }
 
   return filteredData;
 }
 
-async function fetchFileContent(url: string): Promise<any> {
+async function fetchFileContent(url: string): Promise<Record<string, unknown> | string> {
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-    },
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+    }
   });
+
   if (!response.ok) {
     throw new Error(`GitHub API Error: ${response.statusText}`);
   }
 
   const text = await response.text();
- 
+
   try {
-    const parsedYaml = load(text);
+    const parsedYaml = load(text) as Record<string, unknown>;
     return parsedYaml;
   } catch (e) {
     console.error('Failed to parse YAML', e);
@@ -73,17 +95,16 @@ async function fetchFileContent(url: string): Promise<any> {
   }
 }
 
-
-function buildTree(data: any, parentPath = ''): any {
-  return data.map((item: any) => {
+function buildTree(data: GithubFile[], parentPath = ''): GithubFile[] {
+  return data.map((item) => {
     const isFolder = item.type === 'dir';
     return {
       name: item.name,
       path: `${parentPath}/${item.name}`,
       type: isFolder ? 'folder' : 'file',
-      ...(isFolder && { children: buildTree(item.children, `${parentPath}/${item.name}`) }),
+      ...(isFolder && { children: buildTree(item.children || [], `${parentPath}/${item.name}`) }),
       content: isFolder ? 'No content' : item.content,
-      created_by: item.created_by,
+      created_by: item.created_by
     };
   });
 }
@@ -93,10 +114,12 @@ export async function GET() {
     const data = await fetchGithubRepoData('');
     const folderStructure = buildTree(data);
     return NextResponse.json(folderStructure);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in GET /api/taxonomy/graph:', error);
-
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Unknown error occurred' }, { status: 500 });
   }
 }
 
