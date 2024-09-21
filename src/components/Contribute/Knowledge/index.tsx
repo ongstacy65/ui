@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './knowledge.css';
 import { Alert, AlertActionCloseButton } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import { ActionGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
@@ -401,23 +401,42 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     setReset(reset ? false : true);
   };
 
-  const knowledgeFormData: KnowledgeFormData = {
-    email: email,
-    name: name,
-    submissionSummary: submissionSummary,
-    domain: domain,
-    documentOutline: documentOutline,
-    filePath: filePath,
-    seedExamples: seedExamples,
-    knowledgeDocumentRepositoryUrl: knowledgeDocumentRepositoryUrl,
-    knowledgeDocumentCommit: knowledgeDocumentCommit,
-    documentName: documentName,
-    titleWork: titleWork,
-    linkWork: linkWork,
-    revision: revision,
-    licenseWork: licenseWork,
-    creators: creators
-  };
+  const knowledgeFormData = useMemo(
+    () => ({
+      email: email,
+      name: name,
+      submissionSummary: submissionSummary,
+      domain: domain,
+      documentOutline: documentOutline,
+      filePath: filePath,
+      seedExamples: seedExamples,
+      knowledgeDocumentRepositoryUrl: knowledgeDocumentRepositoryUrl,
+      knowledgeDocumentCommit: knowledgeDocumentCommit,
+      documentName: documentName,
+      titleWork: titleWork,
+      linkWork: linkWork,
+      revision: revision,
+      licenseWork: licenseWork,
+      creators: creators
+    }),
+    [
+      email,
+      name,
+      submissionSummary,
+      domain,
+      documentOutline,
+      filePath,
+      seedExamples,
+      knowledgeDocumentRepositoryUrl,
+      knowledgeDocumentCommit,
+      documentName,
+      titleWork,
+      linkWork,
+      revision,
+      licenseWork,
+      creators
+    ]
+  );
 
   useEffect(() => {
     setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
