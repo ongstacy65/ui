@@ -22,6 +22,7 @@ import AttributionInformation from './AttributionInformation/AttributionInformat
 import Submit from './Submit/Submit';
 import DownloadYaml from './DownloadYaml/DownloadYaml';
 import DownloadAttribution from './DownloadAttribution/DownloadAttribution';
+import KnowledgeYamlFileUpload from '@/components/Import/KnowledgeYamlImport';
 
 export interface QuestionAndAnswerPair {
   question: string;
@@ -295,6 +296,20 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     creators: creators
   };
 
+  // Callback for handling successful YAML upload
+  const handleYamlUploadSuccess = (seedExamplesData: SeedExample[]) => {
+    setSeedExamples(seedExamplesData);
+  };
+
+  // Callback for handling YAML upload error
+  const handleYamlUploadError = (title: string, message: string) => {
+    setActionGroupAlertContent({
+      title: title,
+      message: message,
+      success: false
+    });
+  };
+
   return (
     <Form className="form-k">
       <YamlCodeModal isModalOpen={isModalOpen} handleModalToggle={() => setIsModalOpen(!isModalOpen)} yamlContent={yamlContent} />
@@ -304,6 +319,8 @@ export const KnowledgeForm: React.FunctionComponent = () => {
           <CodeIcon /> View YAML
         </Button>
       </div>
+
+      <KnowledgeYamlFileUpload onUploadSuccess={handleYamlUploadSuccess} onUploadError={handleYamlUploadError} />
 
       <KnowledgeDescription />
 
