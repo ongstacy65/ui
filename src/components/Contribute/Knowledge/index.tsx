@@ -3,20 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import './knowledge.css';
 import { Alert, AlertActionCloseButton } from '@patternfly/react-core/dist/dynamic/components/Alert';
-import { ActionGroup, FormFieldGroupHeader } from '@patternfly/react-core/dist/dynamic/components/Form';
-import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
+import { ActionGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
 import { Form } from '@patternfly/react-core/dist/dynamic/components/Form';
-import { CodeIcon } from '@patternfly/react-icons/dist/dynamic/icons/';
 import { getGitHubUsername } from '../../../utils/github';
 import { useSession } from 'next-auth/react';
-import YamlCodeModal from '../../YamlCodeModal';
-import { SchemaVersion, KnowledgeYamlData } from '@/types';
-import { dumpYaml } from '@/utils/yamlConfig';
-import KnowledgeDescription from './KnowledgeDescription/KnowledgeDescription';
 import AuthorInformation from './AuthorInformation/AuthorInformation';
 import KnowledgeInformation from './KnowledgeInformation/KnowledgeInformation';
 import FilePathInformation from './FilePathInformation/FilePathInformation';
-import KnowledgeQuestionAnswerPairs from './KnowledgeQuestionAnswerPairs/KnowledgeQuestionAnswerPairs';
 import DocumentInformation from './DocumentInformation/DocumentInformation';
 import AttributionInformation from './AttributionInformation/AttributionInformation';
 import Submit from './Submit/Submit';
@@ -25,12 +18,21 @@ import DownloadAttribution from './DownloadAttribution/DownloadAttribution';
 import KnowledgeYamlFileUpload from '@/components/Import/KnowledgeYamlImport';
 
 export interface QuestionAndAnswerPair {
+  immutable: boolean;
   question: string;
+  isQuestionValid: ValidatedOptions;
+  questionValidationError?: string;
   answer: string;
+  isAnswerValid: ValidatedOptions;
+  answerValidationError?: string;
 }
 
 export interface SeedExample {
+  immutable: boolean;
+  isExpanded: boolean;
   context: string;
+  isContextValid: ValidatedOptions;
+  validationError?: string;
   questionAndAnswers: QuestionAndAnswerPair[];
 }
 
@@ -55,12 +57,80 @@ export interface KnowledgeFormData {
 export interface ActionGroupAlertContent {
   title: string;
   message: string;
+  url?: string;
   success: boolean;
 }
 
 export const KnowledgeForm: React.FunctionComponent = () => {
   const { data: session } = useSession();
   const [githubUsername, setGithubUsername] = useState<string>('');
+  // Author Information
+  const [email, setEmail] = useState<string>('');
+  const [name, setName] = useState<string>('');
+
+  // Knowledge Information
+  const [submissionSummary, setSubmissionSummary] = useState<string>('');
+  const [domain, setDomain] = useState<string>('');
+  const [documentOutline, setDocumentOutline] = useState<string>('');
+
+  // File Path Information
+  const [filePath, setFilePath] = useState<string>('');
+
+  const [knowledgeDocumentRepositoryUrl, setKnowledgeDocumentRepositoryUrl] = useState<string>('');
+  const [knowledgeDocumentCommit, setKnowledgeDocumentCommit] = useState<string>('');
+  // This used to be 'patterns' but I am not totally sure what this variable actually is...
+  const [documentName, setDocumentName] = useState<string>('');
+
+  // Attribution Information
+  // State
+  const [titleWork, setTitleWork] = useState<string>('');
+  const [linkWork, setLinkWork] = useState<string>('');
+  const [revision, setRevision] = useState<string>('');
+  const [licenseWork, setLicenseWork] = useState<string>('');
+  const [creators, setCreators] = useState<string>('');
+
+  const [actionGroupAlertContent, setActionGroupAlertContent] = useState<ActionGroupAlertContent | undefined>();
+
+  const [disableAction, setDisableAction] = useState<boolean>(true);
+  const [reset, setReset] = useState<boolean>(false);
+
+  const emptySeedExample: SeedExample = {
+    immutable: true,
+    isExpanded: false,
+    context: '',
+    isContextValid: ValidatedOptions.default,
+    questionAndAnswers: [
+      {
+        immutable: true,
+        question: '',
+        isQuestionValid: ValidatedOptions.default,
+        answer: '',
+        isAnswerValid: ValidatedOptions.default
+      },
+      {
+        immutable: true,
+        question: '',
+        isQuestionValid: ValidatedOptions.default,
+        answer: '',
+        isAnswerValid: ValidatedOptions.default
+      },
+      {
+        immutable: true,
+        question: '',
+        isQuestionValid: ValidatedOptions.default,
+        answer: '',
+        isAnswerValid: ValidatedOptions.default
+      }
+    ]
+  };
+
+  const [seedExamples, setSeedExamples] = useState<SeedExample[]>([
+    emptySeedExample,
+    emptySeedExample,
+    emptySeedExample,
+    emptySeedExample,
+    emptySeedExample
+  ]);
 
   useEffect(() => {
     const fetchUsername = async () => {
@@ -76,45 +146,37 @@ export const KnowledgeForm: React.FunctionComponent = () => {
 
     fetchUsername();
   }, [session?.accessToken]);
-  // Author Information
-  const [email, setEmail] = useState<string>('');
-  const [name, setName] = useState<string>('');
-
-  // Knowledge Information
-  const [submissionSummary, setSubmissionSummary] = useState<string>('');
-  const [domain, setDomain] = useState<string>('');
-  const [documentOutline, setDocumentOutline] = useState<string>('');
-
-  // File Path Information
-  const [filePath, setFilePath] = useState<string>('');
-
-  // Knowledge Question Answer Pairs
-
-  // State
-
-  const emptySeedExample: SeedExample = {
-    context: '',
-    questionAndAnswers: [
-      {
-        question: '',
-        answer: ''
-      },
-      {
-        question: '',
-        answer: ''
-      },
-      {
-        question: '',
-        answer: ''
-      }
-    ]
-  };
-
-  const [seedExamples, setSeedExamples] = useState<SeedExample[]>([emptySeedExample]);
 
   // Functions
 
-  const handleContextInputChange = (seedExampleIndex: number, contextValue: string): undefined => {
+  const validateContext = (context: string): ValidatedOptions => {
+    if (context.length > 0 && context.length < 500) {
+      setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+      return ValidatedOptions.success;
+    }
+    setDisableAction(true);
+    return ValidatedOptions.error;
+  };
+
+  const validateQuestion = (question: string): ValidatedOptions => {
+    if (question.length > 0 && question.length < 250) {
+      setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+      return ValidatedOptions.success;
+    }
+    setDisableAction(true);
+    return ValidatedOptions.error;
+  };
+
+  const validateAnswer = (answer: string): ValidatedOptions => {
+    if (answer.length > 0 && answer.length < 250) {
+      setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+      return ValidatedOptions.success;
+    }
+    setDisableAction(true);
+    return ValidatedOptions.error;
+  };
+
+  const handleContextInputChange = (seedExampleIndex: number, contextValue: string): void => {
     setSeedExamples(
       seedExamples.map((seedExample: SeedExample, index: number) =>
         index === seedExampleIndex
@@ -127,7 +189,20 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     );
   };
 
-  const handleQuestionInputChange = (seedExampleIndex: number, questionAndAnswerIndex: number, questionValue: string): undefined => {
+  const handleContextBlur = (seedExampleIndex: number): void => {
+    setSeedExamples(
+      seedExamples.map((seedExample: SeedExample, index: number) =>
+        index === seedExampleIndex
+          ? {
+              ...seedExample,
+              isContextValid: validateContext(seedExample.context)
+            }
+          : seedExample
+      )
+    );
+  };
+
+  const handleQuestionInputChange = (seedExampleIndex: number, questionAndAnswerIndex: number, questionValue: string): void => {
     setSeedExamples(
       seedExamples.map((seedExample: SeedExample, index: number) =>
         index === seedExampleIndex
@@ -147,7 +222,27 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     );
   };
 
-  const handleAnswerInputChange = (seedExampleIndex: number, questionAndAnswerIndex: number, answerValue: string): undefined => {
+  const handleQuestionBlur = (seedExampleIndex: number, questionAndAnswerIndex: number): void => {
+    setSeedExamples(
+      seedExamples.map((seedExample: SeedExample, index: number) =>
+        index === seedExampleIndex
+          ? {
+              ...seedExample,
+              questionAndAnswers: seedExample.questionAndAnswers.map((questionAndAnswerPair: QuestionAndAnswerPair, index: number) =>
+                index === questionAndAnswerIndex
+                  ? {
+                      ...questionAndAnswerPair,
+                      isQuestionValid: validateQuestion(questionAndAnswerPair.question)
+                    }
+                  : questionAndAnswerPair
+              )
+            }
+          : seedExample
+      )
+    );
+  };
+
+  const handleAnswerInputChange = (seedExampleIndex: number, questionAndAnswerIndex: number, answerValue: string): void => {
     setSeedExamples(
       seedExamples.map((seedExample: SeedExample, index: number) =>
         index === seedExampleIndex
@@ -167,10 +262,33 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     );
   };
 
-  const addQuestionAnswerPair = (seedExampleIndex: number): undefined => {
+  const handleAnswerBlur = (seedExampleIndex: number, questionAndAnswerIndex: number): void => {
+    setSeedExamples(
+      seedExamples.map((seedExample: SeedExample, index: number) =>
+        index === seedExampleIndex
+          ? {
+              ...seedExample,
+              questionAndAnswers: seedExample.questionAndAnswers.map((questionAndAnswerPair: QuestionAndAnswerPair, index: number) =>
+                index === questionAndAnswerIndex
+                  ? {
+                      ...questionAndAnswerPair,
+                      isAnswerValid: validateAnswer(questionAndAnswerPair.answer)
+                    }
+                  : questionAndAnswerPair
+              )
+            }
+          : seedExample
+      )
+    );
+  };
+
+  const addQuestionAnswerPair = (seedExampleIndex: number): void => {
     const newQuestionAnswerPair: QuestionAndAnswerPair = {
+      immutable: false,
       question: '',
-      answer: ''
+      isQuestionValid: ValidatedOptions.default,
+      answer: '',
+      isAnswerValid: ValidatedOptions.default
     };
     setSeedExamples(
       seedExamples.map((seedExample: SeedExample, index: number) =>
@@ -182,9 +300,10 @@ export const KnowledgeForm: React.FunctionComponent = () => {
           : seedExample
       )
     );
+    setDisableAction(true);
   };
 
-  const deleteQuestionAnswerPair = (seedExampleIndex: number, questionAnswerIndex: number): undefined => {
+  const deleteQuestionAnswerPair = (seedExampleIndex: number, questionAnswerIndex: number): void => {
     setSeedExamples(
       seedExamples.map((seedExample: SeedExample, index: number) =>
         index === seedExampleIndex
@@ -195,46 +314,29 @@ export const KnowledgeForm: React.FunctionComponent = () => {
           : seedExample
       )
     );
+    console.log('seedExamples qna', seedExamples);
+    setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
   };
 
-  const addSeedExample = (): undefined => {
-    setSeedExamples([...seedExamples, emptySeedExample]);
+  const addSeedExample = (): void => {
+    const seedExample = emptySeedExample;
+    seedExample.immutable = false;
+    seedExample.isExpanded = true;
+    setSeedExamples([...seedExamples, seedExample]);
+    setDisableAction(true);
   };
 
-  // Document Information
-  // State
-
-  const [knowledgeDocumentRepositoryUrl, setKnowledgeDocumentRepositoryUrl] = useState<string>('');
-  const [knowledgeDocumentCommit, setKnowledgeDocumentCommit] = useState<string>('');
-  // This used to be 'patterns' but I am not totally sure what this variable actually is...
-  const [documentName, setDocumentName] = useState<string>('');
-
-  // Attribution Information
-  // State
-  const [titleWork, setTitleWork] = useState<string>('');
-  const [linkWork, setLinkWork] = useState<string>('');
-  const [revision, setRevision] = useState<string>('');
-  const [licenseWork, setLicenseWork] = useState<string>('');
-  const [creators, setCreators] = useState<string>('');
-
-  const [actionGroupAlertContent, setActionGroupAlertContent] = useState<ActionGroupAlertContent | undefined>();
-
-  // functions
+  const deleteSeedExample = (seedExampleIndex: number): void => {
+    setSeedExamples(seedExamples.filter((_, index: number) => index !== seedExampleIndex));
+    console.log('seedExamples', seedExamples);
+    setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+  };
 
   const onCloseActionGroupAlert = () => {
     setActionGroupAlertContent(undefined);
   };
 
-  // Submit
-
-  // break
-
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [yamlContent, setYamlContent] = useState('');
-
-  const resetForm = (): undefined => {
+  const resetForm = (): void => {
     setEmail('');
     setName('');
     setDocumentOutline('');
@@ -248,34 +350,12 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     setLicenseWork('');
     setCreators('');
     setRevision('');
-    setUploadedFiles([]);
     setFilePath('');
-    setSeedExamples([emptySeedExample]);
-  };
+    setSeedExamples([emptySeedExample, emptySeedExample, emptySeedExample, emptySeedExample, emptySeedExample]);
+    setDisableAction(true);
 
-  const handleViewYaml = () => {
-    const yamlData: KnowledgeYamlData = {
-      created_by: githubUsername!,
-      version: SchemaVersion,
-      domain: domain!,
-      document_outline: documentOutline!,
-      seed_examples: seedExamples.map((example) => ({
-        context: example.context,
-        questions_and_answers: example.questionAndAnswers.map((qa) => ({
-          question: qa.question,
-          answer: qa.answer
-        }))
-      })),
-      document: {
-        repo: knowledgeDocumentRepositoryUrl!,
-        commit: knowledgeDocumentCommit!,
-        patterns: documentName ? documentName!.split(',').map((pattern) => pattern.trim()) : ['']
-      }
-    };
-
-    const yamlString = dumpYaml(yamlData);
-    setYamlContent(yamlString);
-    setIsModalOpen(true);
+    // setReset is just reset button, value has no impact.
+    setReset(reset ? false : true);
   };
 
   const knowledgeFormData: KnowledgeFormData = {

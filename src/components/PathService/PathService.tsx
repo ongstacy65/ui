@@ -3,18 +3,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SearchInput } from '@patternfly/react-core/dist/dynamic/components/SearchInput';
 import { List } from '@patternfly/react-core/dist/dynamic/components/List';
 import { ListItem } from '@patternfly/react-core/dist/dynamic/components/List';
-import { Popper, PopperProps } from '@patternfly/react-core/dist/dynamic/helpers';
+import { Popper, PopperProps, ValidatedOptions } from '@patternfly/react-core/dist/dynamic/helpers';
+import { FormHelperText } from '@patternfly/react-core/dist/dynamic/components/Form';
+import { HelperText } from '@patternfly/react-core/dist/dynamic/components/HelperText';
+import { HelperTextItem } from '@patternfly/react-core/dist/dynamic/components/HelperText';
+import ExclamationCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/exclamation-circle-icon';
 
 interface PathServiceProps {
+  reset?: boolean;
   rootPath: string;
   handlePathChange: (value: string) => void;
 }
 
-const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange }) => {
+const PathService: React.FC<PathServiceProps> = ({ reset, rootPath, handlePathChange }) => {
   const [inputValue, setInputValue] = useState<string>('');
   const [items, setItems] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [validPath, setValidPath] = React.useState<ValidatedOptions>();
+
+  const validatePath = () => {
+    if (inputValue.length > 0) {
+      setValidPath(ValidatedOptions.success);
+      return;
+    }
+    setValidPath(ValidatedOptions.error);
+    return;
+  };
 
   const fetchData = async (subpath: string) => {
     try {
@@ -31,7 +46,6 @@ const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange })
       }
 
       const result = await response.json();
-      console.log(result);
       // set items to be displayed in the dropdown
       if (result.data === null || result.data.length === 0) {
         setItems([]);
@@ -51,11 +65,15 @@ const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange })
       }
     };
     window.addEventListener('keydown', handleEsc);
-
     return () => {
       window.removeEventListener('keydown', handleEsc);
     };
   }, []);
+
+  useEffect(() => {
+    setInputValue('');
+    setShowDropdown(false);
+  }, [reset]);
 
   useEffect(() => {
     // check if input value is empty or ends with a slash
@@ -65,6 +83,9 @@ const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange })
       handlePathChange(inputValue);
     } else {
       setItems([]);
+    }
+    if (items.length > 0) {
+      validatePath();
     }
   }, [inputValue]);
 
@@ -86,6 +107,12 @@ const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange })
     setInputValue(inputValue + item + '/');
   };
 
+  const handleBlurEvent = () => {
+    setShowDropdown(false);
+    handlePathChange(inputValue);
+    validatePath();
+  };
+
   const popperProps: PopperProps = {
     triggerRef: inputRef,
     popper: (
@@ -99,7 +126,8 @@ const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange })
     ),
     width: 'trigger',
     preventOverflow: true,
-    isVisible: showDropdown
+    isVisible: showDropdown,
+    onPopperClick: () => handleBlurEvent()
   };
 
   return (
@@ -113,6 +141,16 @@ const PathService: React.FC<PathServiceProps> = ({ rootPath, handlePathChange })
         onClear={() => setInputValue('')}
         onBlur={() => handlePathChange(inputValue)}
       />
+      {validPath === 'error' && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem icon={<ExclamationCircleIcon />} variant={validPath}>
+              Please select a valid file path.
+            </HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
+
       <Popper {...popperProps} />
     </div>
   );

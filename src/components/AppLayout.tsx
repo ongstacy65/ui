@@ -71,6 +71,11 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
         { path: '/playground/chat', label: 'Chat' },
         { path: '/playground/endpoints', label: 'Custom Model Endpoints' }
       ]
+    },
+    {
+      path: '/taxonomy',
+      label: 'Taxonomy',
+      children: [{ path: '/taxonomy/graph', label: 'Graph' }]
     }
   ];
 

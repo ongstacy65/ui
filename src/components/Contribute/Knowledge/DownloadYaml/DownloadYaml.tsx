@@ -1,17 +1,19 @@
 import React from 'react';
-import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
 import { validateFields } from '../validation';
 import { ActionGroupAlertContent, KnowledgeFormData } from '..';
 import { KnowledgeYamlData, SchemaVersion } from '@/types';
 import { dumpYaml } from '@/utils/yamlConfig';
+import { DropdownItem } from '@patternfly/react-core/dist/esm/components/Dropdown/DropdownItem';
+import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
 
 interface Props {
+  disableAction: boolean;
   knowledgeFormData: KnowledgeFormData;
   setActionGroupAlertContent: React.Dispatch<React.SetStateAction<ActionGroupAlertContent | undefined>>;
   githubUsername: string | undefined;
 }
 
-const DownloadYaml: React.FC<Props> = ({ knowledgeFormData, setActionGroupAlertContent, githubUsername }) => {
+const DownloadYaml: React.FC<Props> = ({ disableAction, knowledgeFormData, setActionGroupAlertContent, githubUsername }) => {
   const handleDownloadYaml = () => {
     if (!validateFields(knowledgeFormData, setActionGroupAlertContent)) return;
 
@@ -45,9 +47,9 @@ const DownloadYaml: React.FC<Props> = ({ knowledgeFormData, setActionGroupAlertC
     document.body.removeChild(a);
   };
   return (
-    <Button variant="primary" type="button" onClick={handleDownloadYaml}>
-      Download YAML
-    </Button>
+    <DropdownItem key="Download Yaml" to="#default-link6" isDisabled={disableAction} onClick={handleDownloadYaml}>
+      <CodeIcon /> Yaml File
+    </DropdownItem>
   );
 };
 
