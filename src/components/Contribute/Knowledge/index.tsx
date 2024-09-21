@@ -1,4 +1,3 @@
-// src/components/Contribute/Knowledge/index.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
 import './knowledge.css';
@@ -26,6 +25,8 @@ import { checkKnowledgeFormCompletion } from './validation';
 import { ValidatedOptions } from '@patternfly/react-core/dist/esm/helpers/constants';
 import { DownloadDropdown } from './DownloadDropdown/DownloadDropdown';
 import { ViewDropdown } from './ViewDropdown/ViewDropdown';
+import { KnowledgeYamlData } from '@/types'; // Import KnowledgeYamlData type
+import KnowledgeYamlFileUpload from './ImportYaml/KnowledgeYamlFileUpload';
 
 export interface QuestionAndAnswerPair {
   immutable: boolean;
@@ -157,7 +158,41 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     fetchUsername();
   }, [session?.accessToken]);
 
-  // Functions
+  const handleYamlUploadSuccess = (data: KnowledgeYamlData) => {
+    setDomain(data.domain || '');
+    setDocumentOutline(data.document_outline || '');
+
+    // Set document repo, commit, and patterns if they exist in the uploaded data
+    setKnowledgeDocumentRepositoryUrl(data.document.repo || '');
+    setKnowledgeDocumentCommit(data.document.commit || '');
+    setDocumentName(data.document.patterns.join(', ') || '');
+
+    // Map data.seed_examples to seedExamples state variable
+    const newSeedExamples = data.seed_examples.map((seedExample) => ({
+      immutable: true,
+      isExpanded: false,
+      context: seedExample.context,
+      isContextValid: validateContext(seedExample.context),
+      questionAndAnswers: seedExample.questions_and_answers.map((qa) => ({
+        immutable: true,
+        question: qa.question,
+        isQuestionValid: validateQuestion(qa.question),
+        answer: qa.answer,
+        isAnswerValid: validateAnswer(qa.answer)
+      }))
+    }));
+
+    setSeedExamples(newSeedExamples);
+    setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+  };
+
+  const handleYamlUploadError = (title: string, message: string) => {
+    setActionGroupAlertContent({
+      title,
+      message,
+      success: false
+    });
+  };
 
   const validateContext = (context: string): ValidatedOptions => {
     if (context.length > 0 && context.length < 500) {
@@ -324,7 +359,6 @@ export const KnowledgeForm: React.FunctionComponent = () => {
           : seedExample
       )
     );
-    console.log('seedExamples qna', seedExamples);
     setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
   };
 
@@ -338,7 +372,6 @@ export const KnowledgeForm: React.FunctionComponent = () => {
 
   const deleteSeedExample = (seedExampleIndex: number): void => {
     setSeedExamples(seedExamples.filter((_, index: number) => index !== seedExampleIndex));
-    console.log('seedExamples', seedExamples);
     setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
   };
 
@@ -407,6 +440,7 @@ export const KnowledgeForm: React.FunctionComponent = () => {
           <KnowledgeDescriptionContent />
         </TextContent>
         <Form className="form-k">
+          <KnowledgeYamlFileUpload onUploadSuccess={handleYamlUploadSuccess} onUploadError={handleYamlUploadError} />
           <AuthorInformation
             reset={reset}
             knowledgeFormData={knowledgeFormData}
