@@ -1,6 +1,5 @@
-// src/components/Contribute/Knowledge/index.tsx
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './knowledge.css';
 import { Alert, AlertActionCloseButton } from '@patternfly/react-core/dist/dynamic/components/Alert';
 import { ActionGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
@@ -13,9 +12,21 @@ import FilePathInformation from './FilePathInformation/FilePathInformation';
 import DocumentInformation from './DocumentInformation/DocumentInformation';
 import AttributionInformation from './AttributionInformation/AttributionInformation';
 import Submit from './Submit/Submit';
-import DownloadYaml from './DownloadYaml/DownloadYaml';
-import DownloadAttribution from './DownloadAttribution/DownloadAttribution';
-import KnowledgeYamlFileUpload from '@/components/Import/KnowledgeYamlImport';
+import { Breadcrumb } from '@patternfly/react-core/dist/dynamic/components/Breadcrumb';
+import { BreadcrumbItem } from '@patternfly/react-core/dist/dynamic/components/Breadcrumb';
+import { PageBreadcrumb } from '@patternfly/react-core/dist/dynamic/components/Page';
+import { PageGroup } from '@patternfly/react-core/dist/dynamic/components/Page';
+import { PageSection } from '@patternfly/react-core/dist/dynamic/components/Page';
+import { TextContent } from '@patternfly/react-core/dist/dynamic/components/Text';
+import { Title } from '@patternfly/react-core/dist/dynamic/components/Title';
+import KnowledgeDescriptionContent from './KnowledgeDescription/KnowledgeDescriptionContent';
+import KnowledgeSeedExample from './KnowledgeSeedExample/KnowledgeSeedExample';
+import { checkKnowledgeFormCompletion } from './validation';
+import { ValidatedOptions } from '@patternfly/react-core/dist/esm/helpers/constants';
+import { DownloadDropdown } from './DownloadDropdown/DownloadDropdown';
+import { ViewDropdown } from './ViewDropdown/ViewDropdown';
+import { KnowledgeYamlData } from '@/types'; // Import KnowledgeYamlData type
+import KnowledgeYamlFileUpload from './ImportYaml/KnowledgeYamlFileUpload';
 
 export interface QuestionAndAnswerPair {
   immutable: boolean;
@@ -147,7 +158,41 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     fetchUsername();
   }, [session?.accessToken]);
 
-  // Functions
+  const handleYamlUploadSuccess = (data: KnowledgeYamlData) => {
+    setDomain(data.domain || '');
+    setDocumentOutline(data.document_outline || '');
+
+    // Set document repo, commit, and patterns if they exist in the uploaded data
+    setKnowledgeDocumentRepositoryUrl(data.document.repo || '');
+    setKnowledgeDocumentCommit(data.document.commit || '');
+    setDocumentName(data.document.patterns.join(', ') || '');
+
+    // Map data.seed_examples to seedExamples state variable
+    const newSeedExamples = data.seed_examples.map((seedExample) => ({
+      immutable: true,
+      isExpanded: false,
+      context: seedExample.context,
+      isContextValid: validateContext(seedExample.context),
+      questionAndAnswers: seedExample.questions_and_answers.map((qa) => ({
+        immutable: true,
+        question: qa.question,
+        isQuestionValid: validateQuestion(qa.question),
+        answer: qa.answer,
+        isAnswerValid: validateAnswer(qa.answer)
+      }))
+    }));
+
+    setSeedExamples(newSeedExamples);
+    setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+  };
+
+  const handleYamlUploadError = (title: string, message: string) => {
+    setActionGroupAlertContent({
+      title,
+      message,
+      success: false
+    });
+  };
 
   const validateContext = (context: string): ValidatedOptions => {
     if (context.length > 0 && context.length < 500) {
@@ -314,7 +359,6 @@ export const KnowledgeForm: React.FunctionComponent = () => {
           : seedExample
       )
     );
-    console.log('seedExamples qna', seedExamples);
     setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
   };
 
@@ -328,7 +372,6 @@ export const KnowledgeForm: React.FunctionComponent = () => {
 
   const deleteSeedExample = (seedExampleIndex: number): void => {
     setSeedExamples(seedExamples.filter((_, index: number) => index !== seedExampleIndex));
-    console.log('seedExamples', seedExamples);
     setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
   };
 
@@ -358,119 +401,170 @@ export const KnowledgeForm: React.FunctionComponent = () => {
     setReset(reset ? false : true);
   };
 
-  const knowledgeFormData: KnowledgeFormData = {
-    email: email,
-    name: name,
-    submissionSummary: submissionSummary,
-    domain: domain,
-    documentOutline: documentOutline,
-    filePath: filePath,
-    seedExamples: seedExamples,
-    knowledgeDocumentRepositoryUrl: knowledgeDocumentRepositoryUrl,
-    knowledgeDocumentCommit: knowledgeDocumentCommit,
-    documentName: documentName,
-    titleWork: titleWork,
-    linkWork: linkWork,
-    revision: revision,
-    licenseWork: licenseWork,
-    creators: creators
-  };
+  const knowledgeFormData = useMemo(
+    () => ({
+      email: email,
+      name: name,
+      submissionSummary: submissionSummary,
+      domain: domain,
+      documentOutline: documentOutline,
+      filePath: filePath,
+      seedExamples: seedExamples,
+      knowledgeDocumentRepositoryUrl: knowledgeDocumentRepositoryUrl,
+      knowledgeDocumentCommit: knowledgeDocumentCommit,
+      documentName: documentName,
+      titleWork: titleWork,
+      linkWork: linkWork,
+      revision: revision,
+      licenseWork: licenseWork,
+      creators: creators
+    }),
+    [
+      email,
+      name,
+      submissionSummary,
+      domain,
+      documentOutline,
+      filePath,
+      seedExamples,
+      knowledgeDocumentRepositoryUrl,
+      knowledgeDocumentCommit,
+      documentName,
+      titleWork,
+      linkWork,
+      revision,
+      licenseWork,
+      creators
+    ]
+  );
 
-  // Callback for handling successful YAML upload
-  const handleYamlUploadSuccess = (seedExamplesData: SeedExample[]) => {
-    setSeedExamples(seedExamplesData);
-  };
-
-  // Callback for handling YAML upload error
-  const handleYamlUploadError = (title: string, message: string) => {
-    setActionGroupAlertContent({
-      title: title,
-      message: message,
-      success: false
-    });
-  };
+  useEffect(() => {
+    setDisableAction(!checkKnowledgeFormCompletion(knowledgeFormData));
+  }, [knowledgeFormData]);
 
   return (
-    <Form className="form-k">
-      <YamlCodeModal isModalOpen={isModalOpen} handleModalToggle={() => setIsModalOpen(!isModalOpen)} yamlContent={yamlContent} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <FormFieldGroupHeader titleText={{ text: 'Knowledge Contribution Form', id: 'knowledge-contribution-form-id' }} />
-        <Button variant="plain" onClick={handleViewYaml} aria-label="View YAML">
-          <CodeIcon /> View YAML
-        </Button>
-      </div>
+    <PageGroup>
+      <PageBreadcrumb>
+        <Breadcrumb>
+          <BreadcrumbItem to="/"> Home </BreadcrumbItem>
+          <BreadcrumbItem isActive>Knowledge Contribution</BreadcrumbItem>
+        </Breadcrumb>
+      </PageBreadcrumb>
 
-      <KnowledgeYamlFileUpload onUploadSuccess={handleYamlUploadSuccess} onUploadError={handleYamlUploadError} />
+      <PageSection style={{ backgroundColor: 'white' }}>
+        <Title headingLevel="h1" size="2xl" style={{ paddingTop: '10' }}>
+          Knowledge Contribution
+        </Title>
+        <TextContent>
+          <KnowledgeDescriptionContent />
+        </TextContent>
+        <Form className="form-k">
+          <KnowledgeYamlFileUpload onUploadSuccess={handleYamlUploadSuccess} onUploadError={handleYamlUploadError} />
+          <AuthorInformation
+            reset={reset}
+            knowledgeFormData={knowledgeFormData}
+            setDisableAction={setDisableAction}
+            email={email}
+            setEmail={setEmail}
+            name={name}
+            setName={setName}
+          />
 
-      <KnowledgeDescription />
+          <KnowledgeInformation
+            reset={reset}
+            knowledgeFormData={knowledgeFormData}
+            setDisableAction={setDisableAction}
+            submissionSummary={submissionSummary}
+            setSubmissionSummary={setSubmissionSummary}
+            domain={domain}
+            setDomain={setDomain}
+            documentOutline={documentOutline}
+            setDocumentOutline={setDocumentOutline}
+          />
 
-      <AuthorInformation email={email} setEmail={setEmail} name={name} setName={setName} />
+          <FilePathInformation reset={reset} setFilePath={setFilePath} />
 
-      <KnowledgeInformation
-        submissionSummary={submissionSummary}
-        setSubmissionSummary={setSubmissionSummary}
-        domain={domain}
-        setDomain={setDomain}
-        documentOutline={documentOutline}
-        setDocumentOutline={setDocumentOutline}
-      />
+          <KnowledgeSeedExample
+            seedExamples={seedExamples}
+            handleContextInputChange={handleContextInputChange}
+            handleContextBlur={handleContextBlur}
+            handleQuestionInputChange={handleQuestionInputChange}
+            handleQuestionBlur={handleQuestionBlur}
+            handleAnswerInputChange={handleAnswerInputChange}
+            handleAnswerBlur={handleAnswerBlur}
+            deleteQuestionAnswerPair={deleteQuestionAnswerPair}
+            addQuestionAnswerPair={addQuestionAnswerPair}
+            addSeedExample={addSeedExample}
+            deleteSeedExample={deleteSeedExample}
+          />
 
-      <FilePathInformation setFilePath={setFilePath} />
+          <DocumentInformation
+            reset={reset}
+            knowledgeFormData={knowledgeFormData}
+            setDisableAction={setDisableAction}
+            knowledgeDocumentRepositoryUrl={knowledgeDocumentRepositoryUrl}
+            setKnowledgeDocumentRepositoryUrl={setKnowledgeDocumentRepositoryUrl}
+            knowledgeDocumentCommit={knowledgeDocumentCommit}
+            setKnowledgeDocumentCommit={setKnowledgeDocumentCommit}
+            documentName={documentName}
+            setDocumentName={setDocumentName}
+          />
 
-      <KnowledgeQuestionAnswerPairs
-        seedExamples={seedExamples}
-        handleContextInputChange={handleContextInputChange}
-        handleQuestionInputChange={handleQuestionInputChange}
-        handleAnswerInputChange={handleAnswerInputChange}
-        deleteQuestionAnswerPair={deleteQuestionAnswerPair}
-        addQuestionAnswerPair={addQuestionAnswerPair}
-        addSeedExample={addSeedExample}
-      />
+          <AttributionInformation
+            reset={reset}
+            knowledgeFormData={knowledgeFormData}
+            setDisableAction={setDisableAction}
+            titleWork={titleWork}
+            setTitleWork={setTitleWork}
+            linkWork={linkWork}
+            setLinkWork={setLinkWork}
+            revision={revision}
+            setRevision={setRevision}
+            licenseWork={licenseWork}
+            setLicenseWork={setLicenseWork}
+            creators={creators}
+            setCreators={setCreators}
+          />
 
-      <DocumentInformation
-        knowledgeDocumentRepositoryUrl={knowledgeDocumentRepositoryUrl}
-        setKnowledgeDocumentRepositoryUrl={setKnowledgeDocumentRepositoryUrl}
-        knowledgeDocumentCommit={knowledgeDocumentCommit}
-        setKnowledgeDocumentCommit={setKnowledgeDocumentCommit}
-        documentName={documentName}
-        setDocumentName={setDocumentName}
-        uploadedFiles={uploadedFiles}
-        setUploadedFiles={setUploadedFiles}
-      />
+          {actionGroupAlertContent && (
+            <Alert
+              variant={actionGroupAlertContent.success ? 'success' : 'danger'}
+              title={actionGroupAlertContent.title}
+              timeout={10000}
+              onTimeout={onCloseActionGroupAlert}
+              actionClose={<AlertActionCloseButton onClose={onCloseActionGroupAlert} />}
+            >
+              <p>
+                {actionGroupAlertContent.message}
+                <br />
+                {actionGroupAlertContent.success && actionGroupAlertContent.url && actionGroupAlertContent.url.trim().length > 0 && (
+                  <a href={actionGroupAlertContent.url} target="_blank" rel="noreferrer">
+                    View your pull request
+                  </a>
+                )}
+              </p>
+            </Alert>
+          )}
 
-      <AttributionInformation
-        titleWork={titleWork}
-        setTitleWork={setTitleWork}
-        linkWork={linkWork}
-        setLinkWork={setLinkWork}
-        revision={revision}
-        setRevision={setRevision}
-        licenseWork={licenseWork}
-        setLicenseWork={setLicenseWork}
-        creators={creators}
-        setCreators={setCreators}
-      />
-
-      <ActionGroup>
-        <Submit
-          knowledgeFormData={knowledgeFormData}
-          setActionGroupAlertContent={setActionGroupAlertContent}
-          githubUsername={githubUsername}
-          resetForm={resetForm}
-        />
-        <DownloadYaml knowledgeFormData={knowledgeFormData} setActionGroupAlertContent={setActionGroupAlertContent} githubUsername={githubUsername} />
-        <DownloadAttribution knowledgeFormData={knowledgeFormData} setActionGroupAlertContent={setActionGroupAlertContent} />
-      </ActionGroup>
-      {actionGroupAlertContent && (
-        <Alert
-          variant={actionGroupAlertContent.success ? 'success' : 'danger'}
-          title={actionGroupAlertContent.title}
-          actionClose={<AlertActionCloseButton onClose={onCloseActionGroupAlert} />}
-        >
-          {actionGroupAlertContent.message}
-        </Alert>
-      )}
-    </Form>
+          <ActionGroup>
+            <Submit
+              disableAction={disableAction}
+              knowledgeFormData={knowledgeFormData}
+              setActionGroupAlertContent={setActionGroupAlertContent}
+              githubUsername={githubUsername}
+              resetForm={resetForm}
+            />
+            <DownloadDropdown
+              disableAction={disableAction}
+              knowledgeFormData={knowledgeFormData}
+              setActionGroupAlertContent={setActionGroupAlertContent}
+              githubUsername={githubUsername}
+            />
+            <ViewDropdown disableAction={disableAction} knowledgeFormData={knowledgeFormData} githubUsername={githubUsername} />
+          </ActionGroup>
+        </Form>
+      </PageSection>
+    </PageGroup>
   );
 };
 
