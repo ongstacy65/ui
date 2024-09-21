@@ -19,6 +19,7 @@ import { AttributionData, SchemaVersion, SkillYamlData } from '@/types';
 import SkillDescription from './SkillDescription/SkillDescription';
 import { dumpYaml } from '@/utils/yamlConfig';
 import PathService from '@/components/PathService/PathService';
+import SkillYamlFileUpload from '@/components/Import/SkillYamlImport';
 
 export const SkillForm: React.FunctionComponent = () => {
   const { data: session } = useSession();
@@ -357,6 +358,21 @@ export const SkillForm: React.FunctionComponent = () => {
     document.body.removeChild(a);
   };
 
+  // Callback to handle successful YAML upload
+  const handleYamlUploadSuccess = (data: SkillYamlData) => {
+    setTaskDescription(data.task_description || '');
+    setQuestions(data.seed_examples.map((example) => example.question) || []);
+    setContexts(data.seed_examples.map((example) => example.context || '') || []);
+    setAnswers(data.seed_examples.map((example) => example.answer) || []);
+  };
+
+  // Callback to handle YAML upload error
+  const handleYamlUploadError = (title: string, message: string) => {
+    setFailureAlertTitle(title);
+    setFailureAlertMessage(message);
+    setIsFailureAlertVisible(true);
+  };
+
   return (
     <Form className="form">
       <YamlCodeModal isModalOpen={isModalOpen} handleModalToggle={() => setIsModalOpen(!isModalOpen)} yamlContent={yamlContent} />
@@ -367,7 +383,20 @@ export const SkillForm: React.FunctionComponent = () => {
         </Button>
       </div>
 
-      <SkillDescription />
+      <SkillYamlFileUpload onUploadSuccess={handleYamlUploadSuccess} onUploadError={handleYamlUploadError} />
+
+      <FormFieldGroupExpandable
+        toggleAriaLabel="Details"
+        header={
+          <FormFieldGroupHeader
+            titleText={{ text: 'Skills Description', id: 'skills-description' }}
+            titleDescription="What are InstructLab Skills?"
+          />
+        }
+      >
+        <SkillDescription />
+      </FormFieldGroupExpandable>
+
 
       <FormFieldGroupExpandable
         isExpanded
