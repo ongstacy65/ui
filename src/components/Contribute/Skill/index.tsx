@@ -397,7 +397,6 @@ export const SkillForm: React.FunctionComponent = () => {
         <SkillDescription />
       </FormFieldGroupExpandable>
 
-
       <FormFieldGroupExpandable
         isExpanded
         toggleAriaLabel="Details"
