@@ -84,3 +84,8 @@ export interface PullRequestUpdateData {
   title: string;
   body: string;
 }
+
+export interface YamlFile {
+  name: string;
+  content: string;
+}
