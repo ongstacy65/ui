@@ -17,7 +17,7 @@ import {
   Tab,
   TabTitleText,
 } from '@patternfly/react-core';
-import { DownloadIcon } from '@patternfly/react-icons';
+import { DownloadIcon, TrashIcon } from '@patternfly/react-icons';
 import { YamlFile } from '@/types';
 
 const SyntheticDataGeneration: React.FC = () => {
@@ -61,6 +61,11 @@ const SyntheticDataGeneration: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleReset = () => {
+    setYamlFiles([]);
+    setActiveTabKey(0);
   };
 
   return (
@@ -113,15 +118,28 @@ const SyntheticDataGeneration: React.FC = () => {
                           resizeOrientation="vertical"
                         />
                       </StackItem>
-                      <StackItem>
-                        <Button
-                          variant="secondary"
-                          icon={<DownloadIcon />}
-                          onClick={() => handleDownload(file)}
-                        >
-                          Download {file.name}
-                        </Button>
-                      </StackItem>
+                      <Split hasGutter>
+                        <SplitItem>
+                          <Button
+                            variant="secondary"
+                            icon={<DownloadIcon />}
+                            onClick={() => handleDownload(file)}
+                          >
+                            Download {file.name}
+                          </Button>
+                        </SplitItem>
+                        <SplitItem>
+                          <Button
+                            variant="danger"
+                            aria-label="Reset output"
+                            onClick={handleReset}
+                            isDisabled={yamlFiles.length === 0}
+                            icon={<TrashIcon />}
+                          >
+                            Reset Output
+                          </Button>
+                        </SplitItem>
+                      </Split>
                     </Stack>
                   </Tab>
                 ))}
