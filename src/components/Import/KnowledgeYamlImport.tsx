@@ -7,6 +7,7 @@ import { FormGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
 import { KnowledgeYamlData } from '@/types';
 import { DropEvent } from '@patternfly/react-core/dist/esm/helpers/typeUtils';
 import { SeedExample } from '../Contribute/Knowledge';
+import { ValidatedOptions } from '@patternfly/react-core/dist/esm/helpers/constants';
 
 interface KnowledgeYamlFileUploadProps {
   onUploadSuccess: (data: SeedExample[]) => void;
@@ -34,11 +35,17 @@ const KnowledgeYamlFileUpload: React.FC<KnowledgeYamlFileUploadProps> = ({ onUpl
         const yamlData = yaml.load(fileContent) as KnowledgeYamlData;
         if (yamlData && yamlData.seed_examples) {
           // Mapping the seed examples directly to the form format
-          const seedExamples = yamlData.seed_examples.map((example) => ({
+          const seedExamples: SeedExample[] = yamlData.seed_examples.map((example) => ({
+            immutable: true, // Assuming all seed examples are immutable
+            isExpanded: false, // Set default state of expansion
             context: example.context,
+            isContextValid: ValidatedOptions.default, // Assuming context is valid by default
             questionAndAnswers: example.questions_and_answers.map((qa) => ({
+              immutable: true, // Assuming questions/answers are immutable as well
               question: qa.question,
-              answer: qa.answer
+              isQuestionValid: ValidatedOptions.default, // Default to valid
+              answer: qa.answer,
+              isAnswerValid: ValidatedOptions.default // Default to valid
             }))
           }));
           onUploadSuccess(seedExamples); // Populate the form with seed examples
