@@ -1,5 +1,5 @@
 // src/app/api/upload/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 const GITHUB_API_URL = 'https://api.github.com';

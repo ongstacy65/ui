@@ -1,5 +1,5 @@
 // src/app/api/pr/knowledge/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import yaml from 'js-yaml';
 import { KnowledgeYamlData, AttributionData } from '@/types';
