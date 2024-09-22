@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FormFieldGroupExpandable, FormFieldGroupHeader, FormGroup, FormHelperText } from '@patternfly/react-core/dist/dynamic/components/Form';
 import { TextInput } from '@patternfly/react-core/dist/dynamic/components/TextInput';
-import { HelperText } from '@patternfly/react-core/dist/dynamic/components/HelperText';
-import { HelperTextItem } from '@patternfly/react-core/dist/dynamic/components/HelperText';
+import { HelperText, HelperTextItem } from '@patternfly/react-core/dist/dynamic/components/HelperText';
 import ExclamationCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/exclamation-circle-icon';
 import { ValidatedOptions } from '@patternfly/react-core/dist/esm/helpers/constants';
 import { KnowledgeFormData } from '..';

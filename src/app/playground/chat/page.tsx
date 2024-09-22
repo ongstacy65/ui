@@ -4,11 +4,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@patternfly/react-core/dist/dynamic/components/Button';
-import { Form } from '@patternfly/react-core/dist/dynamic/components/Form';
-import { FormGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
+import { Form, FormGroup } from '@patternfly/react-core/dist/dynamic/components/Form';
 import { TextInput } from '@patternfly/react-core/';
-import { Select } from '@patternfly/react-core/dist/dynamic/components/Select';
-import { SelectOption, SelectList } from '@patternfly/react-core/dist/dynamic/components/Select';
+import { Select, SelectOption, SelectList } from '@patternfly/react-core/dist/dynamic/components/Select';
 import { MenuToggle, MenuToggleElement } from '@patternfly/react-core/dist/dynamic/components/MenuToggle';
 import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner';
 import UserIcon from '@patternfly/react-icons/dist/dynamic/icons/user-icon';

@@ -8,6 +8,7 @@ spec:
     type: RollingUpdate
   template:
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: ui
           image: quay.io/instructlab-ui/ui:main

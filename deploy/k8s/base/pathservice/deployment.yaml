@@ -8,6 +8,7 @@ spec:
     type: RollingUpdate
   template:
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: pathservice
           image: quay.io/instructlab-ui/pathservice:main

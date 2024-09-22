@@ -432,6 +432,7 @@ spec:
         app.kubernetes.io/instance: ingress-nginx
         app.kubernetes.io/name: ingress-nginx
     spec:
+      automountServiceAccountToken: false
       containers:
         - args:
             - /nginx-ingress-controller
@@ -552,6 +553,7 @@ spec:
         app.kubernetes.io/version: 1.5.1
       name: ingress-nginx-admission-create
     spec:
+      automountServiceAccountToken: false
       containers:
         - args:
             - create
@@ -599,6 +601,7 @@ spec:
         app.kubernetes.io/version: 1.5.1
       name: ingress-nginx-admission-patch
     spec:
+      automountServiceAccountToken: false
       containers:
         - args:
             - patch
