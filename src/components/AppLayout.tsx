@@ -64,6 +64,11 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
       ]
     },
     {
+      path: "/data",
+      label: "Data",
+      children: [{ path: "/data/synthetic-data-generation", label: "Synthetic Data Generation" }]
+    },
+    {
       path: '/taxonomy',
       label: 'Taxonomy',
       children: [{ path: '/taxonomy/graph', label: 'Graph' }]
