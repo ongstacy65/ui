@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/AppLayout';
@@ -23,7 +23,8 @@ import {
   MenuToggleElement,
   Alert
 } from '@patternfly/react-core';
-import { DownloadIcon, TrashIcon } from '@patternfly/react-icons';
+import DownloadIcon from '@patternfly/react-icons/dist/dynamic/icons/download-icon';
+import TrashIcon from '@patternfly/react-icons/dist/dynamic/icons/trash-icon';
 import '@patternfly/react-core/dist/styles/base.css';
 import { YamlFile } from '@/types';
 import { Endpoint, Model } from '@/types';
@@ -52,10 +53,10 @@ const SyntheticDataGeneration: React.FC = () => {
 
       const customModels = storedEndpoints
         ? JSON.parse(storedEndpoints).map((endpoint: Endpoint) => ({
-          name: endpoint.modelName,
-          apiURL: `${endpoint.url}`,
-          modelName: endpoint.modelName
-        }))
+            name: endpoint.modelName,
+            apiURL: `${endpoint.url}`,
+            modelName: endpoint.modelName
+          }))
         : [];
 
       setDefaultModels(defaultModels);
@@ -100,7 +101,11 @@ const SyntheticDataGeneration: React.FC = () => {
     setIsLoading(true);
 
     const messagesPayload = [
-      { role: 'user', content: "Generate 1 data talking about object identification using question and answer format with 'Q:' as the question label and 'A:' as the answer label. Please strictly follow the instruction." },
+      {
+        role: 'user',
+        content:
+          "Generate 1 data talking about object identification using question and answer format with 'Q:' as the question label and 'A:' as the answer label. Please strictly follow the instruction."
+      }
     ];
 
     const requestData = {
@@ -119,7 +124,7 @@ const SyntheticDataGeneration: React.FC = () => {
       });
 
       if (!chatResponse.body) {
-        console.error("Error in Chat Response")
+        console.error('Error in Chat Response');
         return;
       }
 
@@ -135,7 +140,6 @@ const SyntheticDataGeneration: React.FC = () => {
           const lines = chunk.split('\n').filter((line) => line.trim() !== '');
 
           for (const line of lines) {
-
             try {
               const jsonObject = JSON.parse(line);
 
@@ -143,12 +147,11 @@ const SyntheticDataGeneration: React.FC = () => {
 
               // Regular expression to match "Question:" followed by any text up to a newline or end of string
               const questionRegex = /(?:Question|Q):\s*(.*?)(?:\n|$)/;
-              const answerRegex =  /(?:Answer|A):\s*([\s\S]*?)(?:\n\n|$)/;
+              const answerRegex = /(?:Answer|A):\s*([\s\S]*?)(?:\n\n|$)/;
 
               // Execute the regex on the input text
               const questionMatch = questionRegex.exec(content);
               const answerMatch = answerRegex.exec(content);
-
 
               const questionValue = questionMatch ? questionMatch[1].trim() : null;
               const answerValue = answerMatch ? answerMatch[1].trim() : null;
@@ -157,27 +160,32 @@ const SyntheticDataGeneration: React.FC = () => {
                 setIsLoading(false);
 
                 const yamlFiles: YamlFile[] = [
-                  { name: 'generated-data-1.yaml', content: 'created_by: AI Generator\n' +
+                  {
+                    name: 'generated-data-1.yaml',
+                    content:
+                      'created_by: AI Generator\n' +
                       'version: 1 \n' +
                       'task_description: Object Identification\n' +
                       'seed_examples: 1 \n' +
-                      ' - question: ' + questionValue + '\n' +
-                      ' - answer: ' + answerValue}
+                      ' - question: ' +
+                      questionValue +
+                      '\n' +
+                      ' - answer: ' +
+                      answerValue
+                  }
                 ];
                 setYamlFiles(yamlFiles);
               }, 1000);
-
             } catch (err) {
               console.error('Error parsing chunk:', err);
             }
           }
         }
       }
-
-    } catch(error) {
-     console.error("Error in fetch of Chat API");
+    } catch (error) {
+      console.error('Error in fetch of Chat API');
     }
-  }
+  };
 
   const handleTabClick = (event: React.MouseEvent<never>, tabIndex: number | string) => {
     setActiveTabKey(tabIndex as number);
@@ -202,59 +210,53 @@ const SyntheticDataGeneration: React.FC = () => {
 
   return (
     <AppLayout>
-     <Split hasGutter className="pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center" style={{ minHeight: '100vh' }}>
-       <SplitItem isFilled className="pf-u-mt-xl">
-         <Card isFullHeight>
-           <CardTitle>Model Data Generation</CardTitle>
-           <CardBody>
-             <Stack hasGutter>
-               <StackItem>
-                 <Split hasGutter>
-                   <SplitItem>
-                       Select Model
-                   </SplitItem>
-                   <SplitItem isFilled>
-                     <Select
-                       id="single-select"
-                       isOpen={isSelectOpen}
-                       selected={selectedModel ? selectedModel.name : 'Select a model'}
-                       onSelect={onSelect}
-                       onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
-                       toggle={toggle}
-                       shouldFocusToggleOnSelect
-                     >
-                       <SelectList>{dropdownItems}</SelectList>
-                     </Select>
-                   </SplitItem>
-                 </Split>
-               </StackItem>
-               <StackItem>
-                 <Form onSubmit={handleSubmit}>
-                   <Button type="submit" variant="primary" isLoading={isLoading} spinnerAriaValueText="Loading...">
-                     {isLoading ? 'Generating' : 'Submit'}
-                   </Button>
-                   {!isModelSelectedOnSend && (
-                     <div>
-                       <Alert variant="danger" title="No Model Selected" ouiaId="DangerAlert" />
-                     </div>
-                   )}
-                 </Form>
-               </StackItem>
-             </Stack>
-           </CardBody>
-         </Card>
-       </SplitItem>
+      <Split hasGutter className="pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center" style={{ minHeight: '100vh' }}>
+        <SplitItem isFilled className="pf-u-mt-xl">
+          <Card isFullHeight>
+            <CardTitle>Model Data Generation</CardTitle>
+            <CardBody>
+              <Stack hasGutter>
+                <StackItem>
+                  <Split hasGutter>
+                    <SplitItem>Select Model</SplitItem>
+                    <SplitItem isFilled>
+                      <Select
+                        id="single-select"
+                        isOpen={isSelectOpen}
+                        selected={selectedModel ? selectedModel.name : 'Select a model'}
+                        onSelect={onSelect}
+                        onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
+                        toggle={toggle}
+                        shouldFocusToggleOnSelect
+                      >
+                        <SelectList>{dropdownItems}</SelectList>
+                      </Select>
+                    </SplitItem>
+                  </Split>
+                </StackItem>
+                <StackItem>
+                  <Form onSubmit={handleSubmit}>
+                    <Button type="submit" variant="primary" isLoading={isLoading} spinnerAriaValueText="Loading...">
+                      {isLoading ? 'Generating' : 'Submit'}
+                    </Button>
+                    {!isModelSelectedOnSend && (
+                      <div>
+                        <Alert variant="danger" title="No Model Selected" ouiaId="DangerAlert" />
+                      </div>
+                    )}
+                  </Form>
+                </StackItem>
+              </Stack>
+            </CardBody>
+          </Card>
+        </SplitItem>
         <SplitItem isFilled className="pf-u-mt-xl">
           <Card isFullHeight>
             <CardTitle>Generated Synthetic Data</CardTitle>
             <CardBody>
               <Tabs activeKey={activeTabKey} onSelect={handleTabClick} isBox={true}>
                 {yamlFiles.map((file, index) => (
-                  <Tab
-                    key={index}
-                    eventKey={index}
-                    title={<TabTitleText>{file.name}</TabTitleText>}
-                  >
+                  <Tab key={index} eventKey={index} title={<TabTitleText>{file.name}</TabTitleText>}>
                     <Stack hasGutter>
                       <StackItem>
                         <TextArea
@@ -266,11 +268,7 @@ const SyntheticDataGeneration: React.FC = () => {
                       </StackItem>
                       <Split hasGutter>
                         <SplitItem>
-                          <Button
-                            variant="secondary"
-                            icon={<DownloadIcon />}
-                            onClick={() => handleDownload(file)}
-                          >
+                          <Button variant="secondary" icon={<DownloadIcon />} onClick={() => handleDownload(file)}>
                             Download {file.name}
                           </Button>
                         </SplitItem>
