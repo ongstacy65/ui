@@ -187,7 +187,7 @@ const SyntheticDataGeneration: React.FC = () => {
     }
   };
 
-  const handleTabClick = (event: React.MouseEvent<never>, tabIndex: number | string) => {
+  const handleTabClick = (event: React.MouseEvent<HTMLElement, MouseEvent>, tabIndex: number | string) => {
     setActiveTabKey(tabIndex as number);
   };
 
@@ -259,12 +259,7 @@ const SyntheticDataGeneration: React.FC = () => {
                   <Tab key={index} eventKey={index} title={<TabTitleText>{file.name}</TabTitleText>}>
                     <Stack hasGutter>
                       <StackItem>
-                        <TextArea
-                          value={file.content}
-                          aria-label={<code>YAML content for ${file.name}</code>}
-                          isReadOnly
-                          resizeOrientation="vertical"
-                        />
+                        <TextArea value={file.content} aria-label={file.name} readOnly resizeOrientation="vertical" />
                       </StackItem>
                       <Split hasGutter>
                         <SplitItem>
